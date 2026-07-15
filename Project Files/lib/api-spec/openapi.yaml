@@ -1,0 +1,478 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: House Rent API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: listings
+    description: Property listing operations
+  - name: inquiries
+    description: Inquiry operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /listings:
+    get:
+      operationId: getListings
+      tags: [listings]
+      summary: List all rental properties
+      parameters:
+        - name: city
+          in: query
+          schema: { type: string }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: bedrooms
+          in: query
+          schema: { type: integer }
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [apartment, house, condo, studio, townhouse]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [available, rented]
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+    post:
+      operationId: createListing
+      tags: [listings]
+      summary: Create a new rental listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /listings/featured:
+    get:
+      operationId: getFeaturedListings
+      tags: [listings]
+      summary: Get featured listings for homepage
+      responses:
+        "200":
+          description: Featured listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+
+  /listings/summary:
+    get:
+      operationId: getListingsSummary
+      tags: [listings]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingsSummary"
+
+  /listings/{id}:
+    get:
+      operationId: getListing
+      tags: [listings]
+      summary: Get a single listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateListing
+      tags: [listings]
+      summary: Update a listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteListing
+      tags: [listings]
+      summary: Delete a listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /listings/{id}/inquiries:
+    get:
+      operationId: getListingInquiries
+      tags: [inquiries]
+      summary: Get all inquiries for a listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Inquiries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inquiry"
+    post:
+      operationId: createInquiry
+      tags: [inquiries]
+      summary: Submit an inquiry for a listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InquiryInput"
+      responses:
+        "201":
+          description: Inquiry submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inquiry"
+
+  /inquiries:
+    get:
+      operationId: getInquiries
+      tags: [inquiries]
+      summary: Get all inquiries (admin)
+      responses:
+        "200":
+          description: All inquiries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inquiry"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Listing:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - address
+        - city
+        - state
+        - price
+        - bedrooms
+        - bathrooms
+        - area
+        - type
+        - status
+        - featured
+        - amenities
+        - images
+        - createdAt
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        price:
+          type: number
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: number
+        area:
+          type: number
+        type:
+          type: string
+          enum: [apartment, house, condo, studio, townhouse]
+        status:
+          type: string
+          enum: [available, rented]
+        featured:
+          type: boolean
+        amenities:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ListingInput:
+      type: object
+      required:
+        - title
+        - description
+        - address
+        - city
+        - state
+        - price
+        - bedrooms
+        - bathrooms
+        - area
+        - type
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        bedrooms:
+          type: integer
+          minimum: 0
+        bathrooms:
+          type: number
+          minimum: 0
+        area:
+          type: number
+          minimum: 0
+        type:
+          type: string
+          enum: [apartment, house, condo, studio, townhouse]
+        status:
+          type: string
+          enum: [available, rented]
+        featured:
+          type: boolean
+        amenities:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+
+    ListingUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        bedrooms:
+          type: integer
+          minimum: 0
+        bathrooms:
+          type: number
+          minimum: 0
+        area:
+          type: number
+          minimum: 0
+        type:
+          type: string
+          enum: [apartment, house, condo, studio, townhouse]
+        status:
+          type: string
+          enum: [available, rented]
+        featured:
+          type: boolean
+        amenities:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+
+    ListingsSummary:
+      type: object
+      required:
+        - total
+        - available
+        - rented
+        - avgPrice
+        - totalInquiries
+        - cityCounts
+      properties:
+        total:
+          type: integer
+        available:
+          type: integer
+        rented:
+          type: integer
+        avgPrice:
+          type: number
+        totalInquiries:
+          type: integer
+        cityCounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CityCount"
+
+    CityCount:
+      type: object
+      required:
+        - city
+        - count
+      properties:
+        city:
+          type: string
+        count:
+          type: integer
+
+    Inquiry:
+      type: object
+      required:
+        - id
+        - listingId
+        - name
+        - email
+        - message
+        - createdAt
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    InquiryInput:
+      type: object
+      required:
+        - name
+        - email
+        - message
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+        message:
+          type: string
+          minLength: 1
